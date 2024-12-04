@@ -1,4 +1,3 @@
-from typing import Optional
 from config import *
 import hikari
 import lightbulb
@@ -6,11 +5,11 @@ from hikari import Intents
 import aiohttp
 import miru
 import storageutils.storage
-import datetime
-import asyncio
-import time
-import threading
 import random
+from datetime import datetime
+
+
+counter: int = 0
 
 bot = lightbulb.BotApp(
     TOKEN,
@@ -18,33 +17,41 @@ bot = lightbulb.BotApp(
     banner=None
 )
 client = miru.Client(bot)
+
 bot.load_extensions_from('./extensions/')
 
 
 
+class BasicView(miru.View):
+
+    @miru.button(label='Drück mich!', style=hikari.ButtonStyle.DANGER)
+    async def basic_button(self, ctx: miru.ViewContext, button: miru.Button):
+        await storageutils.storage.insert_user(ctx.member, 1)
+        await ctx.edit_response(f'', embed=None)
+        button.label = 'Disabled'
+        self.stop()
 
 
-def schedule_function(function: any, hour: int, minute: int):
-    while True:
-        now = datetime.datetime.now()
-        target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        delay = (target_time - now).total_seconds()
-        if delay > 0:
-            time.sleep(delay)
-            function(bot)
-        else:
-            next_day = now + datetime.timedelta(days=1)
-            target_time = next_day.replace(hour=hour, minute=minute, second=0, microsecond=0)
-            delay = (target_time - now).total_seconds()
-            time.sleep(delay)
-            function()
+@bot.listen(hikari.GuildMessageCreateEvent)
+async def count_msgs(event: hikari.GuildMessageCreateEvent):
+    threshold: int = 3 # random.randint(15, 70)
+    global counter
+    if not event.author.is_bot:
+        counter += 1
+        print(f'Es wurden {counter} Nachrichten geschickt.')
+
+    if counter == threshold:
+        print()
+        await spawn_türchen(event)
+        counter = 0
 
 
-async def spawn_türchen() -> None:
-    view = BasicView
-    embed = hikari.Embed(title='EIN TÜRCHEN IST GESPAWNED', description='Sei schnell und drück den Knopf,'
+async def spawn_türchen(event: hikari.GuildMessageCreateEvent) -> None:
+    view = BasicView()
+    embed = hikari.Embed(title='EIN TÜRCHEN IST GESPAWNED', description='Sei schnell und drück den Knopf, '
                                                                         'um es zu öffnen.', color=0x00FFFF)
-    await bot.rest.create_message(channel=COMMUNITY_CHAT, content=embed, components=view.build())
+    await event.message.respond(embed, components=view)
+    print('ich wurde gecalled')
     client.start_view(view)
 
 
@@ -58,10 +65,6 @@ async def on_stopping(_: hikari.StoppingEvent) -> None:
     await bot.d.client_session.close()
 
 
-
 if __name__ == "__main__":
     bot.run()
-    thread = threading.Thread(target=schedule_function,
-                              args=(spawn_türchen, random.randint(11, 24), random.randint(0, 60)))
-    thread.daemon = True  # Set the thread as a daemon thread to exit when the main program ends
-    thread.start()
+
