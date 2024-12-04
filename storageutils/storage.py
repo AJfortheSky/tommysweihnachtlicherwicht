@@ -18,6 +18,15 @@ async def add_türchen(member: hikari.Member, amount: int) -> bool:
         return False
 
 
+async def get_user_tuerchen(member: hikari.Member) -> int:
+    res: list[dict] = db.search(User.id == member.id)
+    if len(res) == 0:
+        return 0
+    else:
+        return res[0]['türchen']
+
+
+
 async def gen_leaderboard() -> hikari.Embed:
     results: list[dict[str, int]] = db.all()
     scores: list[str, int] = list()
@@ -32,7 +41,7 @@ async def gen_leaderboard() -> hikari.Embed:
     )
 
     for score in scores:
-        embed.add_field(name=score[0], value=score[1], inline=True)
+        embed.add_field(name=f'{score[0]}: {score[1]} Türchen', value='-'*60, inline=False)
 
     return embed
 

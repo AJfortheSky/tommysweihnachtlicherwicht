@@ -7,6 +7,8 @@ import miru
 import storageutils.storage
 import random
 from datetime import datetime
+from embed_gen import *
+from hikari import Embed
 
 
 counter: int = 0
@@ -27,16 +29,17 @@ class BasicView(miru.View):
     @miru.button(label='Drück mich!', style=hikari.ButtonStyle.DANGER)
     async def basic_button(self, ctx: miru.ViewContext, button: miru.Button):
         await storageutils.storage.insert_user(ctx.member, 1)
-        await ctx.edit_response(f'', embed=None)
+        await ctx.edit_response(hikari.Embed(title="Türchen Offen!", description='Da war wohl jemand schneller...',
+                                             color='#e61405'))
         button.label = 'Disabled'
         self.stop()
 
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def count_msgs(event: hikari.GuildMessageCreateEvent):
-    threshold: int = 3 # random.randint(15, 70)
+    threshold: int = random.randint(15, 70)
     global counter
-    if not event.author.is_bot:
+    if not event.author.is_bot and event.channel_id in ALLOWED_CHANNELS:
         counter += 1
         print(f'Es wurden {counter} Nachrichten geschickt.')
 
@@ -48,8 +51,7 @@ async def count_msgs(event: hikari.GuildMessageCreateEvent):
 
 async def spawn_türchen(event: hikari.GuildMessageCreateEvent) -> None:
     view = BasicView()
-    embed = hikari.Embed(title='EIN TÜRCHEN IST GESPAWNED', description='Sei schnell und drück den Knopf, '
-                                                                        'um es zu öffnen.', color=0x00FFFF)
+    embed = TUERCHEN_SPAWN_EMBED
     await event.message.respond(embed, components=view)
     print('ich wurde gecalled')
     client.start_view(view)
