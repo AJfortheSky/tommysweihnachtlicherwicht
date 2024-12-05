@@ -1,4 +1,4 @@
-TOKEN: str = 'MTE3NTQ0MzU2MzQxNzQ0NDQxMw.GeVpN9.tXc2X_WOTKG7e4qbAhlFgJJfmd6YVBihZxFHBU'
+TOKEN: str = '' # add your own here
 
 DEFAULT_GUILD: int = 810552703155437568
 
